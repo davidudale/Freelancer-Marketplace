@@ -2060,6 +2060,112 @@ textarea {
   -webkit-backdrop-filter: none;
 }
 
+/* ===== POLISHED DASHBOARD SHELL ===== */
+.app-layout {
+  align-items: start;
+}
+
+.dashboard-surface {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.8)),
+    radial-gradient(circle at top right, rgba(13, 148, 136, 0.12), transparent 34%);
+  box-shadow: var(--shadow-xl);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.dashboard-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--brand), var(--blue), var(--accent));
+  pointer-events: none;
+}
+
+.dashboard-surface .dashboard {
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  max-width: none;
+  margin: 0;
+}
+
+.dashboard-surface .dashboard-header {
+  margin-bottom: 1.5rem;
+  padding: 0 0 1.25rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.dashboard-surface .dashboard-welcome h1 {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+}
+
+.dashboard-surface .dashboard-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+  color: var(--brand-deep);
+  font-weight: 700;
+}
+
+.dashboard-surface .dashboard-note {
+  color: var(--ink-soft);
+}
+
+.dashboard-surface .dashboard-tabs {
+  padding: 0.35rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.dashboard-surface .tab {
+  border-width: 1px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.dashboard-surface .tab.active {
+  background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 10px 24px rgba(13, 148, 136, 0.22);
+}
+
+.dashboard-surface .tab.active i {
+  color: #fff;
+}
+
+.sidebar-user.card {
+  border: 1px solid rgba(13, 148, 136, 0.22);
+  background:
+    linear-gradient(145deg, rgba(13, 148, 136, 0.12), rgba(59, 130, 246, 0.08)),
+    rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow-md);
+}
+
+.sidebar-menu button {
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-menu button.active {
+  box-shadow: 0 10px 24px rgba(13, 148, 136, 0.22);
+}
+
+@media (max-width: 640px) {
+  .dashboard-surface {
+    border-radius: var(--radius-lg);
+  }
+
+  .dashboard-surface .dashboard {
+    padding: 1.25rem;
+  }
+}
+
 /* ===== LANDING PAGE ===== */
 .landing-page {
   min-height: 100vh;

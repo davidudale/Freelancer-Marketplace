@@ -3,6 +3,7 @@ import authRoutes from "./authRoutes.js";
 import profileRoutes from "./profileRoutes.js";
 import listingRoutes from "./listingRoutes.js";
 import bookingRoutes from "./bookingRoutes.js";
+import adminRoutes from "./adminRoutes.js";
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.use("/auth", authRoutes);
 router.use("/profile", profileRoutes);
 router.use("/listings", listingRoutes);
 router.use("/bookings", bookingRoutes);
+router.use("/admin", adminRoutes);
 
 export default router;

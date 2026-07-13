@@ -133,6 +133,10 @@ const cancelBooking = async (bookingId) => {
   });
 };
 
+const getAdminSummary = async () => {
+  return request("/admin/summary");
+};
+
 export {
   register,
   login,
@@ -151,4 +155,5 @@ export {
   createQuote,
   acceptQuote,
   cancelBooking,
+  getAdminSummary,
 };

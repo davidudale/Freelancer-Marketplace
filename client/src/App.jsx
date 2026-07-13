@@ -148,6 +148,19 @@ function App() {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+  const sidebarItems = user?.role === "admin"
+    ? [
+        { section: "overview", icon: "fas fa-th-large", label: "Overview" },
+        { section: "listings", icon: "fas fa-project-diagram", label: "Projects" },
+        { section: "bookings", icon: "fas fa-dollar-sign", label: "Payments" },
+        { section: "support", icon: "fas fa-headset", label: "Support" },
+      ]
+    : [
+        { section: "overview", icon: "fas fa-th-large", label: "Overview" },
+        { section: "listings", icon: "fas fa-list", label: "My Listings" },
+        { section: "bookings", icon: "fas fa-calendar-check", label: "My Bookings" },
+        { section: "support", icon: "fas fa-headset", label: "Support" },
+      ];
 
   const showLanding = !user && currentPage === "home";
   const showAuth = !user && currentPage !== "home";
@@ -279,7 +292,7 @@ function App() {
                   ) : null}
 
                   <button className="btn btn-primary btn-lg" type="submit" disabled={submitting} style={{ width: "100%" }}>
-                    {submitting ? <><i className="fas fa-spinner fa-spin"></i> Please wait…</> : mode === "login" ? <><i className="fas fa-sign-in-alt"></i> Login</> : <><i className="fas fa-user-plus"></i> Create account</>}
+                    {submitting ? <><i className="fas fa-spinner fa-spin"></i> Please wait...</> : mode === "login" ? <><i className="fas fa-sign-in-alt"></i> Login</> : <><i className="fas fa-user-plus"></i> Create account</>}
                   </button>
 
                   <button className="btn btn-outline" type="button" onClick={toggleMode} style={{ width: "100%" }}>
@@ -289,7 +302,7 @@ function App() {
                   </button>
                 </form>
 
-                {loading ? <p className="status status-info"><i className="fas fa-spinner fa-spin"></i> Checking session…</p> : null}
+                {loading ? <p className="status status-info"><i className="fas fa-spinner fa-spin"></i> Checking session...</p> : null}
                 {message ? <p className="status status-success"><i className="fas fa-check-circle"></i> {message}</p> : null}
                 {error ? <p className="status status-error"><i className="fas fa-exclamation-circle"></i> {error}</p> : null}
               </section>
@@ -305,53 +318,26 @@ function App() {
                   <span className="role-tag">{user.role}</span>
                 </div>
                 <div className="sidebar-menu">
-                  <button
-                    type="button"
-                    className={dashboardSection === "overview" ? "active" : ""}
-                    onClick={() => handleSidebarNavigation("overview")}
-                  >
-                    <i className="fas fa-th-large"></i> Overview
-                  </button>
-                  <button
-                    type="button"
-                    className={dashboardSection === "listings" ? "active" : ""}
-                    onClick={() => handleSidebarNavigation("listings")}
-                  >
-                    <i className="fas fa-list"></i> My Listings
-                  </button>
-                  <button
-                    type="button"
-                    className={dashboardSection === "bookings" ? "active" : ""}
-                    onClick={() => handleSidebarNavigation("bookings")}
-                  >
-                    <i className="fas fa-calendar-check"></i> My Bookings
-                  </button>
-                  <button
-                    type="button"
-                    className={dashboardSection === "support" ? "active" : ""}
-                    onClick={() => handleSidebarNavigation("support")}
-                  >
-                    <i className="fas fa-headset"></i> Support
-                  </button>
+                  {sidebarItems.map((item) => (
+                    <button
+                      type="button"
+                      className={dashboardSection === item.section ? "active" : ""}
+                      key={item.section}
+                      onClick={() => handleSidebarNavigation(item.section)}
+                    >
+                      <i className={item.icon}></i> {item.label}
+                    </button>
+                  ))}
                 </div>
               </aside>
 
-              <section className="main-content">
-                <section className="hero card">
-                  <p className="kicker">
-                    <i className="fas fa-rocket"></i> Freelancer Marketplace
-                  </p>
-                  <h1>{pageTitle}</h1>
-                  <p className="subtitle">
-                    Discover local experts, close projects faster, and manage trust in one place.
-                  </p>
-
+              <section className="main-content dashboard-surface">
                   {user.role === "client" ? (
                     <ClientDashboard user={user} activeSection={dashboardSection} onLogout={handleDashboardLogout} />
                   ) : user.role === "freelancer" ? (
                     <FreelancerDashboard user={user} activeSection={dashboardSection} onLogout={handleDashboardLogout} />
                   ) : user.role === "admin" ? (
-                    <AdminDashboard user={user} onLogout={handleDashboardLogout} />
+                    <AdminDashboard user={user} activeSection={dashboardSection} />
                   ) : (
                     <div className="user-card">
                       <h2>Unknown Role</h2>
@@ -361,7 +347,6 @@ function App() {
                       </button>
                     </div>
                   )}
-                </section>
               </section>
             </>
           ) : null}
