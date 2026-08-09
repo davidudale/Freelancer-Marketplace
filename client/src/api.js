@@ -149,6 +149,29 @@ const getAdminSummary = async () => {
   return request("/admin/summary");
 };
 
+const getEscrowByBooking = async (bookingId) => {
+  return request(`/escrow/booking/${bookingId}`);
+};
+
+const fundEscrow = async (bookingId, payload = {}) => {
+  return request(`/escrow/booking/${bookingId}/fund`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+const releaseEscrow = async (bookingId) => {
+  return request(`/escrow/booking/${bookingId}/release`, {
+    method: "POST",
+  });
+};
+
+const refundEscrow = async (bookingId) => {
+  return request(`/escrow/booking/${bookingId}/refund`, {
+    method: "POST",
+  });
+};
+
 export {
   register,
   login,
@@ -159,8 +182,8 @@ export {
   uploadDocument,
   getMyListings,
   createListing,
-  updateListing,
-searchListings,
+updateListing,
+  searchListings,
   createBooking,
   getClientBookings,
   getProviderBookings,
@@ -170,4 +193,8 @@ searchListings,
   completeBooking,
   cancelBooking,
   getAdminSummary,
+  getEscrowByBooking,
+  fundEscrow,
+  releaseEscrow,
+  refundEscrow,
 };

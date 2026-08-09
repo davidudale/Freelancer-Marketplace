@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { logout, searchListings, createBooking, getClientBookings, acceptQuote, rejectQuote, completeBooking } from "./api";
+import { logout, searchListings, createBooking, getClientBookings, acceptQuote, rejectQuote, completeBooking, fundEscrow, releaseEscrow, getEscrowByBooking } from "./api";
 
 function ClientDashboard({ user, activeSection, onLogout }) {
   const [searchValues, setSearchValues] = useState({ category: "", keyword: "", location: "" });
@@ -109,7 +109,7 @@ const loadBookings = async () => {
     }
   };
 
-  const handleCompleteBooking = async (bookingId) => {
+const handleCompleteBooking = async (bookingId) => {
     setLoadingBookings(true);
     setError("");
     setMessage("");
@@ -117,11 +117,58 @@ const loadBookings = async () => {
       await completeBooking(bookingId);
       const data = await getClientBookings();
       setBookings(data);
-      setMessage("Booking marked as completed.");
+      setMessage("Booking marked as completed. Escrow released to provider.");
     } catch (completeError) {
       setError(completeError.message);
     } finally {
       setLoadingBookings(false);
+    }
+  };
+
+  const handleFundEscrow = async (bookingId) => {
+    setLoadingBookings(true);
+    setError("");
+    setMessage("");
+    try {
+      await fundEscrow(bookingId);
+      const data = await getClientBookings();
+      setBookings(data);
+      setMessage("Escrow funded. Payment is now held securely until completion.");
+    } catch (fundError) {
+      setError(fundError.message);
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
+
+  const handleReleaseEscrow = async (bookingId) => {
+    setLoadingBookings(true);
+    setError("");
+    setMessage("");
+    try {
+      await releaseEscrow(bookingId);
+      const data = await getClientBookings();
+      setBookings(data);
+      setMessage("Escrow released. Payment sent to the provider.");
+    } catch (releaseError) {
+      setError(releaseError.message);
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
+
+  const handleGetEscrow = async (bookingId) => {
+    setError("");
+    setMessage("");
+    try {
+      const data = await getEscrowByBooking(bookingId);
+      if (data.escrow) {
+        setMessage(`Escrow: $${data.escrow.amount} (${data.escrow.status})`);
+      } else {
+        setMessage("No escrow found for this booking yet.");
+      }
+    } catch (escrowError) {
+      setError(escrowError.message);
     }
   };
 
@@ -280,9 +327,18 @@ const loadBookings = async () => {
                     <p className="listing-meta"><i className="fas fa-info-circle"></i> No quotes yet.</p>
                   )}
 {booking.status === "quote_accepted" && (
-                    <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+                    <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem", flexWrap: "wrap" }}>
                       <button className="btn btn-primary btn-sm" type="button" onClick={() => handleCompleteBooking(booking._id)}>
                         <i className="fas fa-check-circle"></i> Mark Completed
+                      </button>
+                      <button className="btn btn-accent btn-sm" type="button" onClick={() => handleFundEscrow(booking._id)}>
+                        <i className="fas fa-shield-alt"></i> Fund Escrow
+                      </button>
+                      <button className="btn btn-outline btn-sm" type="button" onClick={() => handleReleaseEscrow(booking._id)}>
+                        <i className="fas fa-hand-holding-usd"></i> Release Payment
+                      </button>
+                      <button className="btn btn-outline btn-sm" type="button" onClick={() => handleGetEscrow(booking._id)}>
+                        <i className="fas fa-eye"></i> Check Escrow
                       </button>
                     </div>
                   )}

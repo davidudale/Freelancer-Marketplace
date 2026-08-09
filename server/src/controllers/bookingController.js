@@ -1,6 +1,7 @@
 import Booking from "../models/Booking.js";
 import ServiceListing from "../models/ServiceListing.js";
 import Quote from "../models/Quote.js";
+import Escrow from "../models/Escrow.js";
 
 export const createBooking = async (req, res, next) => {
   try {
@@ -129,7 +130,7 @@ export const acceptQuote = async (req, res, next) => {
       return res.status(404).json({ message: "Quote not found" });
     }
 
-    if (booking.status === "cancelled" || booking.status === "quote_accepted") {
+if (booking.status === "cancelled" || booking.status === "quote_accepted") {
       return res.status(400).json({ message: "Cannot accept this quote" });
     }
 
@@ -145,7 +146,23 @@ export const acceptQuote = async (req, res, next) => {
     booking.acceptedQuote = quote._id;
     await booking.save();
 
-    res.json({ booking, quote });
+    // Create an escrow record for the accepted quote amount
+    const existingEscrow = await Escrow.findOne({ booking: booking._id });
+    let escrow = null;
+    if (!existingEscrow) {
+      escrow = await Escrow.create({
+        booking: booking._id,
+        client: booking.client,
+        provider: booking.provider,
+        amount: quote.amount,
+        status: "funded",
+        description: `Escrow for accepted quote on booking ${booking._id}`,
+      });
+    } else {
+      escrow = existingEscrow;
+    }
+
+    res.json({ booking, quote, escrow });
   } catch (error) {
     next(error);
   }
@@ -197,14 +214,21 @@ export const completeBooking = async (req, res, next) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    if (booking.status !== "quote_accepted") {
+if (booking.status !== "quote_accepted") {
       return res.status(400).json({ message: "Booking must be accepted before completion" });
     }
 
     booking.status = "completed";
     await booking.save();
 
-    res.json({ message: "Booking completed", booking });
+    // Release the escrow to the provider when the booking is completed
+    const escrow = await Escrow.findOne({ booking: booking._id });
+    if (escrow && escrow.status === "funded") {
+      escrow.status = "released";
+      await escrow.save();
+    }
+
+    res.json({ message: "Booking completed", booking, escrow });
   } catch (error) {
     next(error);
   }
@@ -224,7 +248,7 @@ export const cancelBooking = async (req, res, next) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    if (booking.status === "cancelled" || booking.status === "completed") {
+if (booking.status === "cancelled" || booking.status === "completed") {
       return res.status(400).json({ message: "Booking cannot be cancelled" });
     }
 

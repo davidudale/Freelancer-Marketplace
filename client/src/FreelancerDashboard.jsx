@@ -6,6 +6,7 @@ import {
   getProviderBookings,
   createQuote,
   completeBooking,
+  getEscrowByBooking,
   logout,
   saveProfile,
   updateListing,
@@ -301,7 +302,7 @@ const approveComplete = async (bookingId) => {
       await completeBooking(bookingId);
       const bookingData = await getProviderBookings();
       setBookingRequests(bookingData || []);
-      setMessage("Booking marked as completed.");
+      setMessage("Booking marked as completed. Escrow released to you.");
       setSelectedBooking(null);
     } catch (completeError) {
       setError(completeError.message);
@@ -316,6 +317,21 @@ const approveComplete = async (bookingId) => {
       onLogout();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleCheckEscrow = async (bookingId) => {
+    setError("");
+    setMessage("");
+    try {
+      const data = await getEscrowByBooking(bookingId);
+      if (data.escrow) {
+        setMessage(`Escrow: $${data.escrow.amount} (${data.escrow.status})`);
+      } else {
+        setMessage("No escrow found for this booking yet.");
+      }
+    } catch (escrowError) {
+      setError(escrowError.message);
     }
   };
 
@@ -683,10 +699,13 @@ const approveComplete = async (bookingId) => {
                   ) : (
                     <p className="listing-meta"><i className="fas fa-info-circle"></i> No quotes submitted yet.</p>
                   )}
-                  {booking.status === "quote_accepted" && (
-                    <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+{booking.status === "quote_accepted" && (
+                    <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem", flexWrap: "wrap" }}>
                       <button className="btn btn-primary btn-sm" type="button" onClick={() => approveComplete(booking._id)}>
                         <i className="fas fa-check-circle"></i> Mark Completed
+                      </button>
+<button className="btn btn-outline btn-sm" type="button" onClick={() => handleCheckEscrow(booking._id)}>
+                        <i className="fas fa-shield-alt"></i> Check Escrow
                       </button>
                     </div>
                   )}

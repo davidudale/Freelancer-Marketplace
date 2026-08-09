@@ -7,4 +7,5 @@
 - [x] Client: add `rejectQuote` and `completeBooking` API functions in api.js
 - [x] Client: add Accept/Reject/Complete actions in ClientDashboard.jsx
 - [x] Client: remove dead/invalid `approveQuote` in FreelancerDashboard.jsx
-- [x] Verify all changes (build)
+- [x] Add escrow payment feature (model, controller, routes, API, UI)
+- [x] Verify all changes (client build passes, server syntax valid)
