@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { logout, searchListings, createBooking, getClientBookings } from "./api";
+import { logout, searchListings, createBooking, getClientBookings, acceptQuote, rejectQuote, completeBooking } from "./api";
 
 function ClientDashboard({ user, activeSection, onLogout }) {
   const [searchValues, setSearchValues] = useState({ category: "", keyword: "", location: "" });
@@ -62,7 +62,7 @@ function ClientDashboard({ user, activeSection, onLogout }) {
     }
   };
 
-  const loadBookings = async () => {
+const loadBookings = async () => {
     setLoadingBookings(true);
     setError("");
     setMessage("");
@@ -72,6 +72,54 @@ function ClientDashboard({ user, activeSection, onLogout }) {
       setShowBookings(true);
     } catch (bookingsError) {
       setError(bookingsError.message);
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
+
+  const handleAcceptQuote = async (bookingId, quoteId) => {
+    setLoadingBookings(true);
+    setError("");
+    setMessage("");
+    try {
+      await acceptQuote(bookingId, quoteId);
+      const data = await getClientBookings();
+      setBookings(data);
+      setMessage("Quote accepted. Booking confirmed.");
+    } catch (acceptError) {
+      setError(acceptError.message);
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
+
+  const handleRejectQuote = async (bookingId, quoteId) => {
+    setLoadingBookings(true);
+    setError("");
+    setMessage("");
+    try {
+      await rejectQuote(bookingId, quoteId);
+      const data = await getClientBookings();
+      setBookings(data);
+      setMessage("Quote rejected.");
+    } catch (rejectError) {
+      setError(rejectError.message);
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
+
+  const handleCompleteBooking = async (bookingId) => {
+    setLoadingBookings(true);
+    setError("");
+    setMessage("");
+    try {
+      await completeBooking(bookingId);
+      const data = await getClientBookings();
+      setBookings(data);
+      setMessage("Booking marked as completed.");
+    } catch (completeError) {
+      setError(completeError.message);
     } finally {
       setLoadingBookings(false);
     }
@@ -206,7 +254,7 @@ function ClientDashboard({ user, activeSection, onLogout }) {
                     <i className="fas fa-calendar"></i> {booking.startDate ? new Date(booking.startDate).toLocaleDateString() : "Any"} — {booking.endDate ? new Date(booking.endDate).toLocaleDateString() : "Any"}
                   </p>
                   <p className="listing-price"><i className="fas fa-tag"></i> Budget: {booking.budget || "Not specified"}</p>
-                  {booking.quotes && booking.quotes.length ? (
+{booking.quotes && booking.quotes.length ? (
                     <div className="quote-summary">
                       <strong style={{ fontSize: "0.88rem", color: "var(--ink-soft)" }}>Quotes received:</strong>
                       <ul>
@@ -214,12 +262,29 @@ function ClientDashboard({ user, activeSection, onLogout }) {
                           <li key={quote._id}>
                             <i className="fas fa-comment-dollar" style={{ color: "var(--accent)" }}></i>
                             <span><strong>{quote.amount}</strong> — <span className={`badge badge-${quote.status === "accepted" ? "success" : quote.status === "rejected" ? "danger" : "warning"}`}>{quote.status}</span></span>
+{booking.status === "quote_submitted" && quote.status === "pending" && (
+                              <span style={{ display: "inline-flex", gap: "0.35rem", marginLeft: "0.5rem" }}>
+                                <button className="btn btn-accent btn-sm" type="button" onClick={() => handleAcceptQuote(booking._id, quote._id)}>
+                                  <i className="fas fa-check"></i> Accept
+                                </button>
+                                <button className="btn btn-outline btn-sm" type="button" onClick={() => handleRejectQuote(booking._id, quote._id)}>
+                                  <i className="fas fa-times"></i> Reject
+                                </button>
+                              </span>
+                            )}
                           </li>
                         ))}
                       </ul>
                     </div>
                   ) : (
                     <p className="listing-meta"><i className="fas fa-info-circle"></i> No quotes yet.</p>
+                  )}
+{booking.status === "quote_accepted" && (
+                    <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+                      <button className="btn btn-primary btn-sm" type="button" onClick={() => handleCompleteBooking(booking._id)}>
+                        <i className="fas fa-check-circle"></i> Mark Completed
+                      </button>
+                    </div>
                   )}
                 </div>
               ))

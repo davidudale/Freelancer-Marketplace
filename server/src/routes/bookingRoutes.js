@@ -6,6 +6,8 @@ import {
   getBookingDetail,
   createQuote,
   acceptQuote,
+  rejectQuote,
+  completeBooking,
   cancelBooking,
 } from "../controllers/bookingController.js";
 import { protect } from "../middleware/authMiddleware.js";
@@ -19,6 +21,8 @@ router.get("/provider", getProviderBookings);
 router.get("/:id", getBookingDetail);
 router.post("/:id/quotes", createQuote);
 router.post("/:id/quotes/:quoteId/accept", acceptQuote);
+router.post("/:id/quotes/:quoteId/reject", rejectQuote);
+router.post("/:id/complete", completeBooking);
 router.post("/:id/cancel", cancelBooking);
 
 export default router;

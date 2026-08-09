@@ -127,6 +127,18 @@ const acceptQuote = async (bookingId, quoteId) => {
   });
 };
 
+const rejectQuote = async (bookingId, quoteId) => {
+  return request(`/bookings/${bookingId}/quotes/${quoteId}/reject`, {
+    method: "POST",
+  });
+};
+
+const completeBooking = async (bookingId) => {
+  return request(`/bookings/${bookingId}/complete`, {
+    method: "POST",
+  });
+};
+
 const cancelBooking = async (bookingId) => {
   return request(`/bookings/${bookingId}/cancel`, {
     method: "POST",
@@ -148,12 +160,14 @@ export {
   getMyListings,
   createListing,
   updateListing,
-  searchListings,
+searchListings,
   createBooking,
   getClientBookings,
   getProviderBookings,
   createQuote,
   acceptQuote,
+  rejectQuote,
+  completeBooking,
   cancelBooking,
   getAdminSummary,
 };

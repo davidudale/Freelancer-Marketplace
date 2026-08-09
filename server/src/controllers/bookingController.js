@@ -151,6 +151,65 @@ export const acceptQuote = async (req, res, next) => {
   }
 };
 
+export const rejectQuote = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    if (!booking.client.equals(req.user._id)) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const quote = await Quote.findById(req.params.quoteId);
+    if (!quote || !quote.booking.equals(booking._id)) {
+      return res.status(404).json({ message: "Quote not found" });
+    }
+
+    if (booking.status === "cancelled" || booking.status === "quote_accepted") {
+      return res.status(400).json({ message: "Cannot reject this quote" });
+    }
+
+    quote.status = "rejected";
+    await quote.save();
+
+    booking.status = "quote_rejected";
+    await booking.save();
+
+    res.json({ booking, quote });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const completeBooking = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    if (
+      !booking.client.equals(req.user._id) &&
+      !booking.provider.equals(req.user._id)
+    ) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    if (booking.status !== "quote_accepted") {
+      return res.status(400).json({ message: "Booking must be accepted before completion" });
+    }
+
+    booking.status = "completed";
+    await booking.save();
+
+    res.json({ message: "Booking completed", booking });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const cancelBooking = async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id);

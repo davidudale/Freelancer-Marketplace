@@ -5,7 +5,7 @@ import {
   getProfile,
   getProviderBookings,
   createQuote,
-  acceptQuote,
+  completeBooking,
   logout,
   saveProfile,
   updateListing,
@@ -292,19 +292,19 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
     }
   };
 
-  const approveQuote = async (bookingId, quoteId) => {
+const approveComplete = async (bookingId) => {
     setError("");
     setMessage("");
     setBookingLoading(true);
 
     try {
-      await acceptQuote(bookingId, quoteId);
+      await completeBooking(bookingId);
       const bookingData = await getProviderBookings();
       setBookingRequests(bookingData || []);
-      setMessage("Quote accepted and booking confirmed.");
+      setMessage("Booking marked as completed.");
       setSelectedBooking(null);
-    } catch (acceptError) {
-      setError(acceptError.message);
+    } catch (completeError) {
+      setError(completeError.message);
     } finally {
       setBookingLoading(false);
     }
@@ -677,11 +677,18 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
                             <i className="fas fa-comment-dollar" style={{ color: "var(--accent)" }}></i>
                             <span><strong>${quote.amount}</strong> — <span className={`badge badge-${quote.status === "accepted" ? "success" : quote.status === "rejected" ? "danger" : "warning"}`}>{quote.status}</span></span>
                           </li>
-                        ))}
+))}
                       </ul>
                     </div>
                   ) : (
                     <p className="listing-meta"><i className="fas fa-info-circle"></i> No quotes submitted yet.</p>
+                  )}
+                  {booking.status === "quote_accepted" && (
+                    <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+                      <button className="btn btn-primary btn-sm" type="button" onClick={() => approveComplete(booking._id)}>
+                        <i className="fas fa-check-circle"></i> Mark Completed
+                      </button>
+                    </div>
                   )}
                   <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
                     <button className="btn btn-primary btn-sm" type="button" onClick={() => selectBooking(booking)}>
