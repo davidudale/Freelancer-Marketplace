@@ -1,4 +1,6 @@
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import apiRoutes from "./routes/index.js";
@@ -30,7 +32,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Serve uploaded files statically
-app.use("/uploads", express.static("uploads"));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (req, res) => {
   res.json({ message: "API is running" });
