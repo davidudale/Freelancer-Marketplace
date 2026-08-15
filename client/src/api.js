@@ -172,6 +172,10 @@ const refundEscrow = async (bookingId) => {
   });
 };
 
+const getPublicStats = async () => {
+  return request("/public-stats");
+};
+
 export {
   register,
   login,
@@ -197,4 +201,5 @@ updateListing,
   fundEscrow,
   releaseEscrow,
   refundEscrow,
+  getPublicStats,
 };

@@ -1,7 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getPublicStats } from "./api";
 
 function LandingPage({ onGetStarted }) {
   const [hoverCard, setHoverCard] = useState(null);
+  const [stats, setStats] = useState({
+    freelancers: "12,000+",
+    clients: "5,400+",
+    completedProjects: "8,200+",
+    satisfactionRate: "98%",
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchStats = async () => {
+      try {
+        const data = await getPublicStats();
+        if (isMounted) {
+          setStats({
+            freelancers: data.freelancers > 0 ? `${data.freelancers.toLocaleString()}+` : "0",
+            clients: data.clients > 0 ? `${data.clients.toLocaleString()}+` : "0",
+            completedProjects: data.completedProjects > 0 ? `${data.completedProjects.toLocaleString()}+` : "0",
+            satisfactionRate: `${data.satisfactionRate}%`,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch public stats:", error);
+      }
+    };
+    fetchStats();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const features = [
     {
@@ -76,14 +106,14 @@ function LandingPage({ onGetStarted }) {
         </div>
         <div className="landing-hero-content">
           <p className="kicker">
-            <i className="fas fa-rocket"></i> Freelancer Marketplace
+            <i className="fas fa-map-marker-alt"></i> Local & Remote Service Marketplace
           </p>
           <h1>
-            Your Next Great Project<br />Starts <span className="gradient-text">Here</span>
+            Your Next Service or Project<br />Starts <span className="gradient-text">Here</span>
           </h1>
           <p className="subtitle landing-subtitle">
-            Connect with skilled freelancers to get work done — fast, affordably, and with confidence.
-            Whether you need a logo, a website, or a full product, find the right talent in minutes.
+            Connect with skilled professionals to get work done — fast, safely, and with confidence.
+            Whether you need a developer, a local photographer, home repairs, or tutoring, find the right provider in minutes.
           </p>
           <div className="landing-hero-actions">
             <button className="btn btn-primary btn-lg" onClick={() => onGetStarted("register")}>
@@ -191,19 +221,19 @@ function LandingPage({ onGetStarted }) {
       <section className="landing-section">
         <div className="stats-grid">
           <div className="stat-item">
-            <div className="stat-number">12,000+</div>
+            <div className="stat-number">{stats.freelancers}</div>
             <div className="stat-label">Freelancers</div>
           </div>
           <div className="stat-item">
-            <div className="stat-number">5,400+</div>
+            <div className="stat-number">{stats.clients}</div>
             <div className="stat-label">Clients</div>
           </div>
           <div className="stat-item">
-            <div className="stat-number">8,200+</div>
+            <div className="stat-number">{stats.completedProjects}</div>
             <div className="stat-label">Projects Completed</div>
           </div>
           <div className="stat-item">
-            <div className="stat-number">98%</div>
+            <div className="stat-number">{stats.satisfactionRate}</div>
             <div className="stat-label">Satisfaction Rate</div>
           </div>
         </div>
