@@ -221,6 +221,24 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
     setListingForm(initialListingForm);
   };
 
+  const handleToggleListingActive = async (listing) => {
+    try {
+      const updated = await updateListing(listing._id, {
+        isActive: !listing.isActive,
+      });
+      setListings((prev) =>
+        prev.map((item) => (item._id === listing._id ? updated.listing : item))
+      );
+      toast.success(
+        `Listing "${listing.title}" is now ${
+          !listing.isActive ? "active and visible" : "paused and hidden"
+        }.`
+      );
+    } catch (err) {
+      toast.error(err.message || "Failed to update listing status.");
+    }
+  };
+
   const selectBooking = (booking) => {
     setSelectedBooking(booking);
     setQuoteForm({ amount: "", message: "" });
@@ -308,18 +326,73 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
     return profile ? "Your provider profile is ready." : "Create your provider profile first.";
   }, [profile]);
 
+  const activeBookingsCount = useMemo(() => {
+    return bookingRequests.filter((b) => ["confirmed", "quote_accepted"].includes(b.status)).length;
+  }, [bookingRequests]);
+
+  const servicesCount = useMemo(() => {
+    return listings.length;
+  }, [listings]);
+
+  const totalEarnings = useMemo(() => {
+    return bookingRequests
+      .filter((b) => b.status === "completed")
+      .reduce((sum, b) => sum + (b.budget || 0), 0);
+  }, [bookingRequests]);
+
+  const verificationStatus = profile?.verificationStatus || "unverified";
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="dashboard-welcome">
           <h1>Welcome back, {user.name}!</h1>
-          <p className="dashboard-role"><i className="fas fa-code"></i> Freelancer Dashboard</p>
+          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", margin: "0.3rem 0 0.5rem 0" }}>
+            <p className="dashboard-role" style={{ margin: 0 }}><i className="fas fa-code"></i> Freelancer Dashboard</p>
+            {verificationStatus === "verified" ? (
+              <span className="badge badge-success"><i className="fas fa-check-circle"></i> Verified Provider</span>
+            ) : verificationStatus === "pending" ? (
+              <span className="badge badge-purple"><i className="fas fa-clock"></i> Verification Pending</span>
+            ) : verificationStatus === "rejected" ? (
+              <span className="badge badge-brand"><i className="fas fa-times-circle"></i> Verification Rejected</span>
+            ) : (
+              <span className="badge badge-warning"><i className="fas fa-exclamation-circle"></i> Profile Unverified</span>
+            )}
+          </div>
           <p className="dashboard-note">{roleSummary}</p>
         </div>
         <button className="btn btn-outline btn-sm" onClick={handleLogout}>
           <i className="fas fa-sign-out-alt"></i> Logout
         </button>
       </header>
+
+      {/* Overview Statistics Grid */}
+      <div className="dashboard-grid admin-grid" style={{ marginBottom: "2rem" }}>
+        <div className="admin-card">
+          <div className="admin-icon" style={{ background: "var(--accent-light)" }}>
+            <i className="fas fa-briefcase" style={{ color: "#92400e" }}></i>
+          </div>
+          <h3>Active Bookings</h3>
+          <p style={{ fontSize: "1.8rem", fontWeight: "700", color: "var(--ink)" }}>{activeBookingsCount}</p>
+          <p style={{ color: "var(--ink-lighter)", fontSize: "0.85rem" }}>Currently active projects</p>
+        </div>
+        <div className="admin-card">
+          <div className="admin-icon" style={{ background: "var(--purple-light)" }}>
+            <i className="fas fa-bolt" style={{ color: "var(--purple)" }}></i>
+          </div>
+          <h3>Services Offered</h3>
+          <p style={{ fontSize: "1.8rem", fontWeight: "700", color: "var(--ink)" }}>{servicesCount}</p>
+          <p style={{ color: "var(--ink-lighter)", fontSize: "0.85rem" }}>Published service listings</p>
+        </div>
+        <div className="admin-card">
+          <div className="admin-icon" style={{ background: "var(--brand-light)" }}>
+            <i className="fas fa-dollar-sign" style={{ color: "var(--brand-deep)" }}></i>
+          </div>
+          <h3>Total Earnings</h3>
+          <p style={{ fontSize: "1.8rem", fontWeight: "700", color: "var(--ink)" }}>${totalEarnings.toLocaleString()}</p>
+          <p style={{ color: "var(--ink-lighter)", fontSize: "0.85rem" }}>From completed contracts</p>
+        </div>
+      </div>
 
       <div className="dashboard-tabs">
         <button
@@ -628,7 +701,12 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
             {listings.length ? (
               listings.map((listing) => (
                 <div className="dashboard-card animate-in" key={listing._id}>
-                  <h3><i className="fas fa-bolt" style={{ color: "var(--accent)" }}></i> {listing.title}</h3>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <h3 style={{ margin: 0 }}><i className="fas fa-bolt" style={{ color: "var(--accent)" }}></i> {listing.title}</h3>
+                    <span className={`badge ${listing.isActive ? "badge-success" : "badge-brand"}`}>
+                      {listing.isActive ? "Active" : "Paused"}
+                    </span>
+                  </div>
                   <p className="listing-meta">
                     <i className="fas fa-folder"></i> {listing.category}
                     &nbsp;•&nbsp;
@@ -643,9 +721,16 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
                       <span key={i} className="tag-pill brand-tag">{tag}</span>
                     ))}
                   </div>
-                  <div className="form-actions" style={{ marginTop: "1rem" }}>
-                    <button className="btn btn-primary btn-sm" onClick={() => handleEditListing(listing)}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1.5rem" }}>
+                    <button className="btn btn-outline btn-sm" onClick={() => handleEditListing(listing)}>
                       <i className="fas fa-pen"></i> Edit
+                    </button>
+                    <button
+                      className={`btn btn-sm ${listing.isActive ? "btn-danger" : "btn-primary"}`}
+                      onClick={() => handleToggleListingActive(listing)}
+                    >
+                      <i className={listing.isActive ? "fas fa-pause" : "fas fa-play"}></i>
+                      <span> {listing.isActive ? "Pause" : "Resume"}</span>
                     </button>
                   </div>
                 </div>
