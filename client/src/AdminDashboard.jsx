@@ -150,7 +150,6 @@ function AdminDashboard({ user, activeSection = "overview" }) {
         </div>
       </header>
 
-      {loading ? <p className="status status-info"><i className="fas fa-spinner fa-spin"></i> Loading admin data...</p> : null}
       {message && !loading ? <p className="status status-success"><i className="fas fa-check-circle"></i> {message}</p> : null}
       {error ? <p className="status status-error"><i className="fas fa-exclamation-circle"></i> {error}</p> : null}
 
@@ -181,16 +180,27 @@ function AdminDashboard({ user, activeSection = "overview" }) {
           </div>
 
           <div className="dashboard-grid admin-grid">
-            {statCards.map((stat) => (
-              <div className="admin-card" key={stat.title}>
-                <div className="admin-icon" style={{ background: stat.background }}>
-                  <i className={stat.icon} style={{ color: stat.color }}></i>
+            {loading ? (
+              [...Array(4)].map((_, i) => (
+                <div className="admin-card skeleton-card" key={i}>
+                  <div className="skeleton skeleton-circle" style={{ width: "48px", height: "48px" }}></div>
+                  <div className="skeleton skeleton-text" style={{ width: "60%", height: "1.2rem", marginTop: "1rem" }}></div>
+                  <div className="skeleton skeleton-text" style={{ width: "40%", height: "1.8rem" }}></div>
+                  <div className="skeleton skeleton-text skeleton-short"></div>
                 </div>
-                <h3>{stat.title}</h3>
-                <p style={{ fontSize: "1.8rem", fontWeight: "700", color: "var(--ink)" }}>{stat.value}</p>
-                <p style={{ color: "var(--ink-lighter)", fontSize: "0.85rem" }}>{stat.detail}</p>
-              </div>
-            ))}
+              ))
+            ) : (
+              statCards.map((stat) => (
+                <div className="admin-card" key={stat.title}>
+                  <div className="admin-icon" style={{ background: stat.background }}>
+                    <i className={stat.icon} style={{ color: stat.color }}></i>
+                  </div>
+                  <h3>{stat.title}</h3>
+                  <p style={{ fontSize: "1.8rem", fontWeight: "700", color: "var(--ink)" }}>{stat.value}</p>
+                  <p style={{ color: "var(--ink-lighter)", fontSize: "0.85rem" }}>{stat.detail}</p>
+                </div>
+              ))
+            )}
           </div>
 
           <div className="divider"></div>
@@ -222,7 +232,17 @@ function AdminDashboard({ user, activeSection = "overview" }) {
           </div>
           <p className="dashboard-note">{activeSectionDetails?.description}</p>
 
-          {activeTool === "users" ? (
+          {loading ? (
+            <div className="dashboard-grid booking-grid">
+              {[...Array(3)].map((_, i) => (
+                <div className="dashboard-card skeleton-card" key={i}>
+                  <div className="skeleton skeleton-text skeleton-title" style={{ width: "65%" }}></div>
+                  <div className="skeleton skeleton-text" style={{ width: "85%" }}></div>
+                  <div className="skeleton" style={{ width: "80px", height: "22px", borderRadius: "var(--radius-full)" }}></div>
+                </div>
+              ))}
+            </div>
+          ) : activeTool === "users" ? (
             <div className="dashboard-grid booking-grid">
               {summary.recentUsers.length ? (
                 summary.recentUsers.map((recentUser) => (

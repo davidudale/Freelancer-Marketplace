@@ -282,6 +282,16 @@ const handleCompleteBooking = async (bookingId) => {
               <i className="fas fa-eye"></i> View Bookings
             </button>
           </div>
+        ) : loadingBookings ? (
+          <div className="dashboard-grid booking-grid">
+            {[...Array(2)].map((_, i) => (
+              <div className="dashboard-card skeleton-card" key={i}>
+                <div className="skeleton skeleton-text skeleton-title" style={{ width: "70%" }}></div>
+                <div className="skeleton skeleton-text" style={{ width: "50%" }}></div>
+                <div className="skeleton skeleton-text" style={{ width: "90%" }}></div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="dashboard-grid booking-grid">
             {bookings.length ? (
@@ -355,29 +365,40 @@ const handleCompleteBooking = async (bookingId) => {
       </section>
 
       <div className="dashboard-grid service-results">
-        {results.map((listing) => (
-          <div className="dashboard-card animate-in" key={listing._id}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <h3><i className="fas fa-star" style={{ color: "var(--accent)" }}></i> {listing.title}</h3>
-              <span className="badge badge-brand">{listing.availability}</span>
+        {searching ? (
+          [...Array(3)].map((_, i) => (
+            <div className="dashboard-card skeleton-card" key={i}>
+              <div className="skeleton skeleton-text skeleton-title"></div>
+              <div className="skeleton skeleton-text" style={{ width: "80%" }}></div>
+              <div className="skeleton skeleton-text" style={{ width: "50%" }}></div>
+              <div className="skeleton" style={{ height: "40px", borderRadius: "var(--radius-md)", marginTop: "0.75rem" }}></div>
             </div>
-            <p className="listing-meta">
-              <i className="fas fa-folder"></i> {listing.category}
-              &nbsp;•&nbsp;
-              <i className="fas fa-map-marker-alt"></i> {listing.location}
-            </p>
-            <p>{listing.description}</p>
-            <p className="listing-price"><i className="fas fa-dollar-sign"></i> {listing.priceRange.min} - ${listing.priceRange.max}</p>
-            <div className="listing-tags">
-              {(listing.tags || []).map((tag, i) => (
-                <span key={i} className="tag-pill brand-tag">{tag}</span>
-              ))}
+          ))
+        ) : (
+          results.map((listing) => (
+            <div className="dashboard-card animate-in" key={listing._id}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <h3><i className="fas fa-star" style={{ color: "var(--accent)" }}></i> {listing.title}</h3>
+                <span className="badge badge-brand">{listing.availability}</span>
+              </div>
+              <p className="listing-meta">
+                <i className="fas fa-folder"></i> {listing.category}
+                &nbsp;•&nbsp;
+                <i className="fas fa-map-marker-alt"></i> {listing.location}
+              </p>
+              <p>{listing.description}</p>
+              <p className="listing-price"><i className="fas fa-dollar-sign"></i> {listing.priceRange.min} - ${listing.priceRange.max}</p>
+              <div className="listing-tags">
+                {(listing.tags || []).map((tag, i) => (
+                  <span key={i} className="tag-pill brand-tag">{tag}</span>
+                ))}
+              </div>
+              <button className="btn btn-primary" style={{ width: "100%", marginTop: "0.75rem" }} type="button" onClick={() => selectListingForBooking(listing)}>
+                <i className="fas fa-paper-plane"></i> Request Booking
+              </button>
             </div>
-            <button className="btn btn-primary" style={{ width: "100%", marginTop: "0.75rem" }} type="button" onClick={() => selectListingForBooking(listing)}>
-              <i className="fas fa-paper-plane"></i> Request Booking
-            </button>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {selectedListing ? (

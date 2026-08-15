@@ -373,11 +373,48 @@ const approveComplete = async (bookingId) => {
         </button>
       </div>
 
-      {loading ? <p className="status status-info"><i className="fas fa-spinner fa-spin"></i> Loading your profile and listings…</p> : null}
       {message ? <p className="status status-success"><i className="fas fa-check-circle"></i> {message}</p> : null}
       {error ? <p className="status status-error"><i className="fas fa-exclamation-circle"></i> {error}</p> : null}
 
-      {activeTab === "profile" ? (
+      {loading ? (
+        activeTab === "profile" ? (
+          <div className="profile-form card skeleton-card" style={{ gap: "1.5rem" }}>
+            <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+              <div className="skeleton skeleton-circle"></div>
+              <div className="skeleton skeleton-text skeleton-title" style={{ margin: 0 }}></div>
+            </div>
+            <div>
+              <div className="skeleton skeleton-text" style={{ width: "30%", height: "0.8rem", marginBottom: "0.5rem" }}></div>
+              <div className="skeleton" style={{ height: "42px", borderRadius: "var(--radius-sm)" }}></div>
+            </div>
+            <div>
+              <div className="skeleton skeleton-text" style={{ width: "20%", height: "0.8rem", marginBottom: "0.5rem" }}></div>
+              <div className="skeleton" style={{ height: "100px", borderRadius: "var(--radius-sm)" }}></div>
+            </div>
+          </div>
+        ) : activeTab === "listings" ? (
+          <div className="dashboard-grid listings-grid" style={{ marginTop: "2rem" }}>
+            {[...Array(2)].map((_, i) => (
+              <div className="dashboard-card skeleton-card" key={i}>
+                <div className="skeleton skeleton-text skeleton-title"></div>
+                <div className="skeleton skeleton-text" style={{ width: "80%" }}></div>
+                <div className="skeleton skeleton-text" style={{ width: "40%" }}></div>
+                <div className="skeleton" style={{ height: "38px", marginTop: "1rem" }}></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="dashboard-grid booking-grid" style={{ marginTop: "2rem" }}>
+            {[...Array(2)].map((_, i) => (
+              <div className="dashboard-card skeleton-card" key={i}>
+                <div className="skeleton skeleton-text skeleton-title" style={{ width: "70%" }}></div>
+                <div className="skeleton skeleton-text" style={{ width: "50%" }}></div>
+                <div className="skeleton skeleton-text" style={{ width: "90%" }}></div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : activeTab === "profile" ? (
         <form className="profile-form card" onSubmit={profileSave}>
           <div className="card-header">
             <div className="icon-wrap purple"><i className="fas fa-user-cog"></i></div>

@@ -166,6 +166,20 @@ function App() {
   const showAuth = !user && currentPage !== "home";
   const showDashboard = !!user;
 
+  if (loading) {
+    return (
+      <div className="page" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="ambient ambient-left" />
+        <div className="ambient ambient-right" />
+        <div className="card text-center" style={{ padding: "3rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "1.5rem", maxWidth: "400px" }}>
+          <i className="fas fa-spinner fa-spin fa-3x" style={{ color: "var(--brand)" }}></i>
+          <h2 style={{ fontSize: "1.4rem", fontWeight: "600", color: "var(--text)" }}>Securing connection...</h2>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>Checking session status. Please wait.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page">
       <div className="ambient ambient-left" />
@@ -278,15 +292,9 @@ function App() {
                     <label>
                       Role
                       <select name="role" value={form.role} onChange={handleChange}>
-                        <option value="client">
-                          <i className="fas fa-user-tie"></i> Client
-                        </option>
-                        <option value="freelancer">
-                          <i className="fas fa-code"></i> Freelancer
-                        </option>
-                        <option value="admin">
-                          <i className="fas fa-shield-alt"></i> Admin
-                        </option>
+                        <option value="client">Client</option>
+                        <option value="freelancer">Freelancer</option>
+                        <option value="admin">Admin</option>
                       </select>
                     </label>
                   ) : null}
@@ -302,7 +310,6 @@ function App() {
                   </button>
                 </form>
 
-                {loading ? <p className="status status-info"><i className="fas fa-spinner fa-spin"></i> Checking session...</p> : null}
                 {message ? <p className="status status-success"><i className="fas fa-check-circle"></i> {message}</p> : null}
                 {error ? <p className="status status-error"><i className="fas fa-exclamation-circle"></i> {error}</p> : null}
               </section>
