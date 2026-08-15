@@ -210,6 +210,10 @@ const verifyProfile = async (profileId, status) => {
   });
 };
 
+const getProviderProfile = async (providerId) => {
+  return request(`/profile/provider/${providerId}`);
+};
+
 export {
   register,
   login,
@@ -244,4 +248,5 @@ export {
   getAdminEscrows,
   getPendingVerifications,
   verifyProfile,
+  getProviderProfile,
 };

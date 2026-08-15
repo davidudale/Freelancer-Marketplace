@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { logout, searchListings, createBooking, getClientBookings, acceptQuote, rejectQuote, completeBooking, fundEscrow, releaseEscrow, getEscrowByBooking } from "./api";
+import { logout, searchListings, createBooking, getClientBookings, acceptQuote, rejectQuote, completeBooking, fundEscrow, releaseEscrow, getEscrowByBooking, getProviderProfile } from "./api";
 
 function ClientDashboard({ user, activeSection, onLogout }) {
   const [searchValues, setSearchValues] = useState({ category: "", keyword: "", location: "" });
@@ -12,6 +12,34 @@ function ClientDashboard({ user, activeSection, onLogout }) {
   const [searching, setSearching] = useState(false);
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [loadingBookings, setLoadingBookings] = useState(false);
+  const [viewingProfile, setViewingProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  const handleViewProfile = async (providerId) => {
+    if (!providerId) return;
+    setLoadingProfile(true);
+    try {
+      const data = await getProviderProfile(providerId);
+      setViewingProfile(data.profile);
+    } catch (err) {
+      toast.error(err.message || "Failed to load provider profile");
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const handleClearFilters = async () => {
+    setSearchValues({ category: "", keyword: "", location: "" });
+    setSearching(true);
+    try {
+      const data = await searchListings({ category: "", keyword: "", location: "" });
+      setResults(data.listings || []);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSearching(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -184,6 +212,20 @@ const handleCompleteBooking = async (bookingId) => {
     }
   };
 
+  const activeBookingsCount = useMemo(() => {
+    return bookings.filter((b) => ["pending", "quote_submitted", "quote_accepted", "confirmed"].includes(b.status)).length;
+  }, [bookings]);
+
+  const completedProjectsCount = useMemo(() => {
+    return bookings.filter((b) => b.status === "completed").length;
+  }, [bookings]);
+
+  const totalSpent = useMemo(() => {
+    return bookings
+      .filter((b) => ["completed", "confirmed", "quote_accepted"].includes(b.status))
+      .reduce((sum, b) => sum + (b.budget || 0), 0);
+  }, [bookings]);
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -197,6 +239,34 @@ const handleCompleteBooking = async (bookingId) => {
         </button>
       </header>
 
+      {/* Overview Statistics Grid */}
+      <div className="dashboard-grid admin-grid" style={{ marginBottom: "2rem" }}>
+        <div className="admin-card animate-in">
+          <div className="admin-icon" style={{ background: "var(--accent-light)" }}>
+            <i className="fas fa-briefcase" style={{ color: "#92400e" }}></i>
+          </div>
+          <h3>Active Bookings</h3>
+          <p style={{ fontSize: "1.8rem", fontWeight: "700", color: "var(--ink)" }}>{activeBookingsCount}</p>
+          <p style={{ color: "var(--ink-lighter)", fontSize: "0.85rem" }}>Projects in progress or pending</p>
+        </div>
+        <div className="admin-card animate-in">
+          <div className="admin-icon" style={{ background: "var(--purple-light)" }}>
+            <i className="fas fa-check-circle" style={{ color: "var(--purple)" }}></i>
+          </div>
+          <h3>Completed Projects</h3>
+          <p style={{ fontSize: "1.8rem", fontWeight: "700", color: "var(--ink)" }}>{completedProjectsCount}</p>
+          <p style={{ color: "var(--ink-lighter)", fontSize: "0.85rem" }}>Fully resolved contracts</p>
+        </div>
+        <div className="admin-card animate-in">
+          <div className="admin-icon" style={{ background: "var(--brand-light)" }}>
+            <i className="fas fa-wallet" style={{ color: "var(--brand-deep)" }}></i>
+          </div>
+          <h3>Total Spent</h3>
+          <p style={{ fontSize: "1.8rem", fontWeight: "700", color: "var(--ink)" }}>${totalSpent.toLocaleString()}</p>
+          <p style={{ color: "var(--ink-lighter)", fontSize: "0.85rem" }}>From active & completed contracts</p>
+        </div>
+      </div>
+
       <section className="search-panel card">
         <div className="card-header">
           <div className="icon-wrap brand"><i className="fas fa-search"></i></div>
@@ -205,12 +275,22 @@ const handleCompleteBooking = async (bookingId) => {
         <form className="search-form" onSubmit={handleSearch}>
           <label>
             Category
-            <input
+            <select
               name="category"
               value={searchValues.category}
               onChange={handleChange}
-              placeholder="e.g. Design, Plumbing"
-            />
+            >
+              <option value="">All Categories</option>
+              <option value="Design">Design</option>
+              <option value="Development">Development</option>
+              <option value="Writing">Writing</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Consulting">Consulting</option>
+              <option value="Support">Support</option>
+              <option value="Plumbing">Plumbing</option>
+              <option value="Cleaning">Cleaning</option>
+              <option value="Electrician">Electrician</option>
+            </select>
           </label>
           <div className="grid-two">
             <label>
@@ -232,9 +312,14 @@ const handleCompleteBooking = async (bookingId) => {
               />
             </label>
           </div>
-          <button className="btn btn-primary" type="submit" disabled={searching} style={{ width: "100%" }}>
-            {searching ? <><i className="fas fa-spinner fa-spin"></i> Searching…</> : <><i className="fas fa-search"></i> Search Services</>}
-          </button>
+          <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+            <button className="btn btn-primary" type="submit" disabled={searching} style={{ flex: 2 }}>
+              {searching ? <><i className="fas fa-spinner fa-spin"></i> Searching…</> : <><i className="fas fa-search"></i> Search Services</>}
+            </button>
+            <button className="btn btn-outline" type="button" onClick={handleClearFilters} disabled={searching} style={{ flex: 1 }}>
+              <i className="fas fa-undo"></i> Clear
+            </button>
+          </div>
         </form>
       </section>
 
@@ -350,24 +435,39 @@ const handleCompleteBooking = async (bookingId) => {
           ))
         ) : (
           results.map((listing) => (
-            <div className="dashboard-card animate-in" key={listing._id}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <h3><i className="fas fa-star" style={{ color: "var(--accent)" }}></i> {listing.title}</h3>
-                <span className="badge badge-brand">{listing.availability}</span>
+            <div className="dashboard-card animate-in" key={listing._id} style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <h3 style={{ fontSize: "1.15rem", fontWeight: "600" }}><i className="fas fa-star" style={{ color: "var(--accent)" }}></i> {listing.title}</h3>
+                  <span className="badge badge-brand">{listing.availability}</span>
+                </div>
+                <p className="listing-meta" style={{ marginTop: "0.5rem" }}>
+                  <i className="fas fa-folder"></i> {listing.category}
+                  &nbsp;•&nbsp;
+                  <i className="fas fa-map-marker-alt"></i> {listing.location}
+                </p>
+                <p style={{ margin: "0.75rem 0" }}>{listing.description}</p>
+                <p className="listing-price" style={{ margin: "0.5rem 0" }}><i className="fas fa-tag"></i> {listing.priceRange.min} - ${listing.priceRange.max}</p>
+                <p className="listing-meta" style={{ fontSize: "0.85rem", color: "var(--brand-deep)" }}>
+                  <i className="fas fa-user-circle"></i> Provider:{" "}
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleViewProfile(listing.provider?._id);
+                    }}
+                    style={{ textDecoration: "underline", fontWeight: "600", color: "var(--brand-deep)" }}
+                  >
+                    {listing.provider?.name || "Unknown"}
+                  </a>
+                </p>
+                <div className="listing-tags" style={{ marginTop: "0.8rem" }}>
+                  {(listing.tags || []).map((tag, i) => (
+                    <span key={i} className="tag-pill brand-tag">{tag}</span>
+                  ))}
+                </div>
               </div>
-              <p className="listing-meta">
-                <i className="fas fa-folder"></i> {listing.category}
-                &nbsp;•&nbsp;
-                <i className="fas fa-map-marker-alt"></i> {listing.location}
-              </p>
-              <p>{listing.description}</p>
-              <p className="listing-price"><i className="fas fa-dollar-sign"></i> {listing.priceRange.min} - ${listing.priceRange.max}</p>
-              <div className="listing-tags">
-                {(listing.tags || []).map((tag, i) => (
-                  <span key={i} className="tag-pill brand-tag">{tag}</span>
-                ))}
-              </div>
-              <button className="btn btn-primary" style={{ width: "100%", marginTop: "0.75rem" }} type="button" onClick={() => selectListingForBooking(listing)}>
+              <button className="btn btn-primary" style={{ width: "100%", marginTop: "1.5rem" }} type="button" onClick={() => selectListingForBooking(listing)}>
                 <i className="fas fa-paper-plane"></i> Request Booking
               </button>
             </div>
@@ -431,6 +531,112 @@ const handleCompleteBooking = async (bookingId) => {
           </form>
         </section>
       ) : null}
+
+      {/* Provider Profile Quick-View Modal */}
+      {viewingProfile && (
+        <div
+          className="modal-overlay animate-in"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(15, 23, 42, 0.4)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => setViewingProfile(null)}
+        >
+          <div
+            className="modal-content card animate-in"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "500px",
+              width: "90%",
+              padding: "2.25rem",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              position: "relative",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
+              <div>
+                <h2 style={{ fontSize: "1.40rem", fontWeight: "600", color: "var(--text)", margin: 0 }}>
+                  {viewingProfile.user?.name || "Provider Details"}
+                </h2>
+                <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginTop: "0.2rem" }}>
+                  {viewingProfile.user?.email}
+                </p>
+              </div>
+              <button
+                className="btn btn-sm btn-outline"
+                onClick={() => setViewingProfile(null)}
+                style={{ border: "none", padding: "0.5rem", borderRadius: "50%" }}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                <span className={`badge ${viewingProfile.verificationStatus === "verified" ? "badge-success" : viewingProfile.verificationStatus === "pending" ? "badge-purple" : viewingProfile.verificationStatus === "rejected" ? "badge-brand" : "badge-warning"}`}>
+                  <i className={viewingProfile.verificationStatus === "verified" ? "fas fa-check-circle" : "fas fa-info-circle"}></i>
+                  {" "}{viewingProfile.verificationStatus || "unverified"}
+                </span>
+                <span className="badge badge-brand">
+                  Hourly: ${viewingProfile.hourlyRate?.min} - ${viewingProfile.hourlyRate?.max}
+                </span>
+              </div>
+
+              <div>
+                <h4 style={{ fontSize: "0.95rem", fontWeight: "600", color: "var(--text)", marginBottom: "0.3rem" }}>Professional Title</h4>
+                <p style={{ fontSize: "1.05rem", fontWeight: "500", color: "var(--brand-deep)" }}>{viewingProfile.title || "Freelancer"}</p>
+              </div>
+
+              <div>
+                <h4 style={{ fontSize: "0.95rem", fontWeight: "600", color: "var(--text)", marginBottom: "0.3rem" }}>Biography</h4>
+                <p style={{ fontSize: "0.95rem", color: "var(--text-muted)", lineHeight: "1.5" }}>{viewingProfile.bio || "No biography provided."}</p>
+              </div>
+
+              <div>
+                <h4 style={{ fontSize: "0.95rem", fontWeight: "600", color: "var(--text)", marginBottom: "0.5rem" }}>Core Skills</h4>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  {viewingProfile.skills?.length ? (
+                    viewingProfile.skills.map((skill, idx) => (
+                      <span key={idx} className="tag-pill brand-tag">{skill}</span>
+                    ))
+                  ) : (
+                    <span style={{ fontSize: "0.9rem", color: "var(--text-muted)", fontStyle: "italic" }}>No skills listed.</span>
+                  )}
+                </div>
+              </div>
+
+              {viewingProfile.portfolio?.length ? (
+                <div>
+                  <h4 style={{ fontSize: "0.95rem", fontWeight: "600", color: "var(--text)", marginBottom: "0.5rem" }}>Portfolio & Reference Links</h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    {viewingProfile.portfolio.map((url, idx) => (
+                      <a
+                        key={idx}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: "0.9rem", color: "var(--brand)", textDecoration: "underline", wordBreak: "break-all" }}
+                      >
+                        <i className="fas fa-external-link-alt" style={{ fontSize: "0.8rem", marginRight: "0.3rem" }}></i> {url}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
