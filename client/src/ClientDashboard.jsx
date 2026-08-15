@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { logout, searchListings, createBooking, getClientBookings, acceptQuote, rejectQuote, completeBooking, fundEscrow, releaseEscrow, getEscrowByBooking } from "./api";
 
 function ClientDashboard({ user, activeSection, onLogout }) {
@@ -8,8 +9,6 @@ function ClientDashboard({ user, activeSection, onLogout }) {
   const [bookingForm, setBookingForm] = useState({ description: "", startDate: "", endDate: "", budget: "" });
   const [bookings, setBookings] = useState([]);
   const [showBookings, setShowBookings] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
   const [searching, setSearching] = useState(false);
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [loadingBookings, setLoadingBookings] = useState(false);
@@ -31,8 +30,6 @@ function ClientDashboard({ user, activeSection, onLogout }) {
   const selectListingForBooking = (listing) => {
     setSelectedListing(listing);
     setBookingForm({ description: "", startDate: "", endDate: "", budget: "" });
-    setMessage("");
-    setError("");
     setShowBookings(false);
   };
 
@@ -41,8 +38,6 @@ function ClientDashboard({ user, activeSection, onLogout }) {
     if (!selectedListing) return;
 
     setBookingSubmitting(true);
-    setMessage("");
-    setError("");
 
     try {
       await createBooking({
@@ -52,11 +47,11 @@ function ClientDashboard({ user, activeSection, onLogout }) {
         endDate: bookingForm.endDate,
         budget: Number(bookingForm.budget),
       });
-      setMessage("Booking request sent. Providers can now respond with a quote.");
+      toast.success("Booking request sent. Providers can now respond with a quote.");
       setSelectedListing(null);
       setBookingForm({ description: "", startDate: "", endDate: "", budget: "" });
     } catch (bookingError) {
-      setError(bookingError.message);
+      toast.error(bookingError.message);
     } finally {
       setBookingSubmitting(false);
     }
@@ -64,14 +59,12 @@ function ClientDashboard({ user, activeSection, onLogout }) {
 
 const loadBookings = async () => {
     setLoadingBookings(true);
-    setError("");
-    setMessage("");
     try {
       const data = await getClientBookings();
       setBookings(data);
       setShowBookings(true);
     } catch (bookingsError) {
-      setError(bookingsError.message);
+      toast.error(bookingsError.message);
     } finally {
       setLoadingBookings(false);
     }
@@ -79,15 +72,13 @@ const loadBookings = async () => {
 
   const handleAcceptQuote = async (bookingId, quoteId) => {
     setLoadingBookings(true);
-    setError("");
-    setMessage("");
     try {
       await acceptQuote(bookingId, quoteId);
       const data = await getClientBookings();
       setBookings(data);
-      setMessage("Quote accepted. Booking confirmed.");
+      toast.success("Quote accepted. Booking confirmed.");
     } catch (acceptError) {
-      setError(acceptError.message);
+      toast.error(acceptError.message);
     } finally {
       setLoadingBookings(false);
     }
@@ -95,15 +86,13 @@ const loadBookings = async () => {
 
   const handleRejectQuote = async (bookingId, quoteId) => {
     setLoadingBookings(true);
-    setError("");
-    setMessage("");
     try {
       await rejectQuote(bookingId, quoteId);
       const data = await getClientBookings();
       setBookings(data);
-      setMessage("Quote rejected.");
+      toast.success("Quote rejected.");
     } catch (rejectError) {
-      setError(rejectError.message);
+      toast.error(rejectError.message);
     } finally {
       setLoadingBookings(false);
     }
@@ -111,15 +100,13 @@ const loadBookings = async () => {
 
 const handleCompleteBooking = async (bookingId) => {
     setLoadingBookings(true);
-    setError("");
-    setMessage("");
     try {
       await completeBooking(bookingId);
       const data = await getClientBookings();
       setBookings(data);
-      setMessage("Booking marked as completed. Escrow released to provider.");
+      toast.success("Booking marked as completed. Escrow released to provider.");
     } catch (completeError) {
-      setError(completeError.message);
+      toast.error(completeError.message);
     } finally {
       setLoadingBookings(false);
     }
@@ -127,15 +114,13 @@ const handleCompleteBooking = async (bookingId) => {
 
   const handleFundEscrow = async (bookingId) => {
     setLoadingBookings(true);
-    setError("");
-    setMessage("");
     try {
       await fundEscrow(bookingId);
       const data = await getClientBookings();
       setBookings(data);
-      setMessage("Escrow funded. Payment is now held securely until completion.");
+      toast.success("Escrow funded. Payment is now held securely.");
     } catch (fundError) {
-      setError(fundError.message);
+      toast.error(fundError.message);
     } finally {
       setLoadingBookings(false);
     }
@@ -143,32 +128,28 @@ const handleCompleteBooking = async (bookingId) => {
 
   const handleReleaseEscrow = async (bookingId) => {
     setLoadingBookings(true);
-    setError("");
-    setMessage("");
     try {
       await releaseEscrow(bookingId);
       const data = await getClientBookings();
       setBookings(data);
-      setMessage("Escrow released. Payment sent to the provider.");
+      toast.success("Escrow released. Payment sent to the provider.");
     } catch (releaseError) {
-      setError(releaseError.message);
+      toast.error(releaseError.message);
     } finally {
       setLoadingBookings(false);
     }
   };
 
   const handleGetEscrow = async (bookingId) => {
-    setError("");
-    setMessage("");
     try {
       const data = await getEscrowByBooking(bookingId);
       if (data.escrow) {
-        setMessage(`Escrow: $${data.escrow.amount} (${data.escrow.status})`);
+        toast.info(`Escrow: $${data.escrow.amount} (${data.escrow.status})`);
       } else {
-        setMessage("No escrow found for this booking yet.");
+        toast.info("No escrow found for this booking yet.");
       }
     } catch (escrowError) {
-      setError(escrowError.message);
+      toast.error(escrowError.message);
     }
   };
 
@@ -178,8 +159,6 @@ const handleCompleteBooking = async (bookingId) => {
     } else {
       setShowBookings(false);
       setSelectedListing(null);
-      setMessage("");
-      setError("");
     }
   }, [activeSection]);
 
@@ -191,17 +170,15 @@ const handleCompleteBooking = async (bookingId) => {
   const handleSearch = async (event) => {
     event.preventDefault();
     setSearching(true);
-    setError("");
-    setMessage("");
 
     try {
       const data = await searchListings(searchValues);
       setResults(data.listings || []);
       if (!data.listings || data.listings.length === 0) {
-        setMessage("No services matched your search. Try a different keyword or location.");
+        toast.info("No services matched your search. Try a different keyword or location.");
       }
     } catch (searchError) {
-      setError(searchError.message);
+      toast.error(searchError.message);
     } finally {
       setSearching(false);
     }
@@ -259,9 +236,6 @@ const handleCompleteBooking = async (bookingId) => {
             {searching ? <><i className="fas fa-spinner fa-spin"></i> Searching…</> : <><i className="fas fa-search"></i> Search Services</>}
           </button>
         </form>
-
-        {message ? <p className="status status-success"><i className="fas fa-check-circle"></i> {message}</p> : null}
-        {error ? <p className="status status-error"><i className="fas fa-exclamation-circle"></i> {error}</p> : null}
       </section>
 
       <section className="booking-panel">

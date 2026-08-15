@@ -56,7 +56,6 @@ const uploadDocument = async (file) => {
     method: "POST",
     credentials: "include",
     body: formData,
-    // Don't set Content-Type header - let browser set it with boundary for multipart/form-data
   });
 
   const data = await response.json().catch(() => ({}));
@@ -176,6 +175,41 @@ const getPublicStats = async () => {
   return request("/public-stats");
 };
 
+const getAdminUsers = async () => {
+  return request("/admin/users");
+};
+
+const deleteAdminUser = async (userId) => {
+  return request(`/admin/users/${userId}`, { method: "DELETE" });
+};
+
+const getAdminListings = async () => {
+  return request("/admin/listings");
+};
+
+const toggleAdminListingActive = async (listingId) => {
+  return request(`/admin/listings/${listingId}/toggle`, { method: "PUT" });
+};
+
+const getAdminBookings = async () => {
+  return request("/admin/bookings");
+};
+
+const getAdminEscrows = async () => {
+  return request("/admin/escrows");
+};
+
+const getPendingVerifications = async () => {
+  return request("/admin/verifications");
+};
+
+const verifyProfile = async (profileId, status) => {
+  return request(`/admin/verify/${profileId}`, {
+    method: "PUT",
+    body: JSON.stringify({ status }),
+  });
+};
+
 export {
   register,
   login,
@@ -186,7 +220,7 @@ export {
   uploadDocument,
   getMyListings,
   createListing,
-updateListing,
+  updateListing,
   searchListings,
   createBooking,
   getClientBookings,
@@ -202,4 +236,12 @@ updateListing,
   releaseEscrow,
   refundEscrow,
   getPublicStats,
+  getAdminUsers,
+  deleteAdminUser,
+  getAdminListings,
+  toggleAdminListingActive,
+  getAdminBookings,
+  getAdminEscrows,
+  getPendingVerifications,
+  verifyProfile,
 };

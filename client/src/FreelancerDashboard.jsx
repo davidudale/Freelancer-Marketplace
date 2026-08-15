@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import {
   createListing,
   getMyListings,
@@ -42,8 +43,6 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
   const [quoteForm, setQuoteForm] = useState({ amount: "", message: "" });
   const [listingForm, setListingForm] = useState(initialListingForm);
   const [editingListingId, setEditingListingId] = useState(null);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [quoteSubmitting, setQuoteSubmitting] = useState(false);
@@ -53,38 +52,28 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
     const loadData = async () => {
       setLoading(true);
       try {
-        const profileData = await getProfile();
-        setProfile(profileData.profile);
-        if (profileData.profile) {
+        const [profileData, listingsData, bookingsData] = await Promise.all([
+          getProfile().catch(() => null),
+          getMyListings().catch(() => ({ listings: [] })),
+          getProviderBookings().catch(() => []),
+        ]);
+        const pData = profileData?.profile || null;
+        setProfile(pData);
+        if (pData) {
           setProfileForm({
-            title: profileData.profile.title || "",
-            bio: profileData.profile.bio || "",
-            location: profileData.profile.location || "",
-            availability: profileData.profile.availability || "Available",
-            skills: (profileData.profile.skills || []).join(", "),
-            hourlyRate: {
-              min: profileData.profile.hourlyRate?.min || 0,
-              max: profileData.profile.hourlyRate?.max || 0,
-            },
-            portfolio: (profileData.profile.portfolio || []).join(", "),
+            title: pData.title || "",
+            bio: pData.bio || "",
+            location: pData.location || "",
+            availability: pData.availability || "Available",
+            skills: (pData.skills || []).join(", "),
+            hourlyRate: pData.hourlyRate || { min: 0, max: 0 },
+            portfolio: (pData.portfolio || []).join(", "),
           });
         }
-      } catch {
-        setProfile(null);
-      }
-
-      try {
-        const listingData = await getMyListings();
-        setListings(listingData.listings || []);
+        setListings(listingsData.listings || []);
+        setBookingRequests(bookingsData || []);
       } catch (fetchError) {
-        setError(fetchError.message);
-      }
-
-      try {
-        const bookingData = await getProviderBookings();
-        setBookingRequests(bookingData || []);
-      } catch (bookingError) {
-        console.warn("Unable to load booking requests", bookingError);
+        toast.error(fetchError.message);
       } finally {
         setLoading(false);
       }
@@ -105,8 +94,6 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
 
   const profileSave = async (event) => {
     event.preventDefault();
-    setError("");
-    setMessage("");
 
     try {
       const payload = {
@@ -124,9 +111,9 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
 
       const result = await saveProfile(payload);
       setProfile(result.profile);
-      setMessage("Profile saved successfully.");
+      toast.success("Profile saved successfully.");
     } catch (saveError) {
-      setError(saveError.message);
+      toast.error(saveError.message);
     }
   };
 
@@ -135,15 +122,13 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
     if (!file) return;
 
     setUploadingDocument(true);
-    setError("");
-    setMessage("");
 
     try {
       const result = await uploadDocument(file);
       setProfile(result.profile);
-      setMessage("Document uploaded successfully.");
+      toast.success("Document uploaded successfully.");
     } catch (uploadError) {
-      setError(uploadError.message);
+      toast.error(uploadError.message);
     } finally {
       setUploadingDocument(false);
     }
@@ -193,14 +178,10 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
       isActive: listing.isActive,
     });
     setActiveTab("listings");
-    setMessage("");
-    setError("");
   };
 
   const handleListingSubmit = async (event) => {
     event.preventDefault();
-    setMessage("");
-    setError("");
 
     try {
       const payload = {
@@ -221,43 +202,37 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
       if (editingListingId) {
         result = await updateListing(editingListingId, payload);
         setListings((prev) => prev.map((item) => (item._id === editingListingId ? result.listing : item)));
-        setMessage("Listing updated successfully.");
+        toast.success("Listing updated successfully.");
       } else {
         result = await createListing(payload);
         setListings((prev) => [result.listing, ...prev]);
-        setMessage("Listing created successfully.");
+        toast.success("Listing created successfully.");
       }
 
       setListingForm(initialListingForm);
       setEditingListingId(null);
     } catch (listingError) {
-      setError(listingError.message);
+      toast.error(listingError.message);
     }
   };
 
   const handleCancelEdit = () => {
     setEditingListingId(null);
     setListingForm(initialListingForm);
-    setError("");
-    setMessage("");
   };
 
   const selectBooking = (booking) => {
     setSelectedBooking(booking);
     setQuoteForm({ amount: "", message: "" });
-    setMessage("");
-    setError("");
   };
 
   const loadBookings = async () => {
     setBookingLoading(true);
-    setMessage("");
-    setError("");
     try {
       const bookingData = await getProviderBookings();
       setBookingRequests(bookingData || []);
     } catch (bookingError) {
-      setError(bookingError.message);
+      toast.error(bookingError.message);
     } finally {
       setBookingLoading(false);
     }
@@ -273,39 +248,35 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
     if (!selectedBooking) return;
 
     setQuoteSubmitting(true);
-    setError("");
-    setMessage("");
 
     try {
       await createQuote(selectedBooking._id, {
         amount: Number(quoteForm.amount),
         message: quoteForm.message,
       });
-      setMessage("Quote submitted successfully.");
+      toast.success("Quote submitted successfully.");
       const bookingData = await getProviderBookings();
       setBookingRequests(bookingData || []);
       setSelectedBooking(null);
       setQuoteForm({ amount: "", message: "" });
     } catch (quoteError) {
-      setError(quoteError.message);
+      toast.error(quoteError.message);
     } finally {
       setQuoteSubmitting(false);
     }
   };
 
-const approveComplete = async (bookingId) => {
-    setError("");
-    setMessage("");
+  const approveComplete = async (bookingId) => {
     setBookingLoading(true);
 
     try {
       await completeBooking(bookingId);
       const bookingData = await getProviderBookings();
       setBookingRequests(bookingData || []);
-      setMessage("Booking marked as completed. Escrow released to you.");
+      toast.success("Booking marked as completed. Escrow released to you.");
       setSelectedBooking(null);
     } catch (completeError) {
-      setError(completeError.message);
+      toast.error(completeError.message);
     } finally {
       setBookingLoading(false);
     }
@@ -321,17 +292,15 @@ const approveComplete = async (bookingId) => {
   };
 
   const handleCheckEscrow = async (bookingId) => {
-    setError("");
-    setMessage("");
     try {
       const data = await getEscrowByBooking(bookingId);
       if (data.escrow) {
-        setMessage(`Escrow: $${data.escrow.amount} (${data.escrow.status})`);
+        toast.info(`Escrow: $${data.escrow.amount} (${data.escrow.status})`);
       } else {
-        setMessage("No escrow found for this booking yet.");
+        toast.info("No escrow found for this booking yet.");
       }
     } catch (escrowError) {
-      setError(escrowError.message);
+      toast.error(escrowError.message);
     }
   };
 
@@ -373,8 +342,7 @@ const approveComplete = async (bookingId) => {
         </button>
       </div>
 
-      {message ? <p className="status status-success"><i className="fas fa-check-circle"></i> {message}</p> : null}
-      {error ? <p className="status status-error"><i className="fas fa-exclamation-circle"></i> {error}</p> : null}
+
 
       {loading ? (
         activeTab === "profile" ? (

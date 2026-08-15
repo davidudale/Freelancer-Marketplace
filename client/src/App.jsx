@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { login, logout, me, register } from "./api";
 import ClientDashboard from "./ClientDashboard";
 import FreelancerDashboard from "./FreelancerDashboard";
@@ -20,8 +22,6 @@ function App() {
   const [dashboardSection, setDashboardSection] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
 
   useEffect(() => {
     const checkSession = async () => {
@@ -60,18 +60,12 @@ function App() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const clearFeedback = () => {
-    setMessage("");
-    setError("");
-  };
-
   const resetForm = () => {
     setForm(initialForm);
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    clearFeedback();
     setSubmitting(true);
 
     try {
@@ -90,26 +84,25 @@ function App() {
 
       const data = mode === "register" ? await register(payload) : await login(payload);
       setUser(data.user);
-      setMessage(mode === "register" ? "Registration successful." : "Login successful.");
+      toast.success(mode === "register" ? "Registration successful." : "Login successful.");
       resetForm();
       setCurrentPage("dashboard");
     } catch (submitError) {
-      setError(submitError.message);
+      toast.error(submitError.message);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleLogout = async () => {
-    clearFeedback();
     try {
       await logout();
       setUser(null);
       setMode("login");
       setCurrentPage("home");
-      setMessage("You have been logged out.");
+      toast.success("You have been logged out.");
     } catch (logoutError) {
-      setError(logoutError.message);
+      toast.error(logoutError.message);
     }
   };
 
@@ -125,7 +118,6 @@ function App() {
   };
 
   const toggleMode = () => {
-    clearFeedback();
     setMode((prev) => (prev === "login" ? "register" : "login"));
   };
 
@@ -153,6 +145,7 @@ function App() {
         { section: "overview", icon: "fas fa-th-large", label: "Overview" },
         { section: "listings", icon: "fas fa-project-diagram", label: "Projects" },
         { section: "bookings", icon: "fas fa-dollar-sign", label: "Payments" },
+        { section: "verifications", icon: "fas fa-shield-alt", label: "Verifications" },
         { section: "support", icon: "fas fa-headset", label: "Support" },
       ]
     : [
@@ -184,6 +177,7 @@ function App() {
     <div className="page">
       <div className="ambient ambient-left" />
       <div className="ambient ambient-right" />
+      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
 
       <header className={`site-nav ${showLanding ? "site-nav-transparent" : ""}`}>
         <a className="nav-brand" href="#" onClick={(e) => { e.preventDefault(); setCurrentPage("home"); }}>
@@ -310,8 +304,6 @@ function App() {
                   </button>
                 </form>
 
-                {message ? <p className="status status-success"><i className="fas fa-check-circle"></i> {message}</p> : null}
-                {error ? <p className="status status-error"><i className="fas fa-exclamation-circle"></i> {error}</p> : null}
               </section>
             </section>
           ) : null}
