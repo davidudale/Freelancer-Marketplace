@@ -66,11 +66,7 @@ const uploadVerificationDocument = async (req, res, next) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const profile = await Profile.findOne({ user: req.user._id });
-
-    if (!profile) {
-      return res.status(404).json({ message: "Profile not found" });
-    }
+    let profile = await Profile.findOne({ user: req.user._id });
 
     // Create document entry
     const documentEntry = {
@@ -80,9 +76,27 @@ const uploadVerificationDocument = async (req, res, next) => {
       uploadedAt: new Date(),
     };
 
-    // Add to verification documents array
-    profile.verificationDocs.push(documentEntry);
+    if (!profile) {
+      // Auto-create profile stub so document upload succeeds before first profile save
+      profile = new Profile({
+        user: req.user._id,
+        title: "Freelancer Profile",
+        bio: "",
+        location: "",
+        skills: [],
+        portfolio: [],
+        verificationDocs: [documentEntry],
+        verificationStatus: "pending",
+      });
+    } else {
+      profile.verificationDocs.push(documentEntry);
+      profile.verificationStatus = "pending";
+    }
+
     await profile.save();
+
+    // Populate user relation for consistency
+    await profile.populate("user", "name email role");
 
     return res.status(200).json({
       message: "Document uploaded successfully",
