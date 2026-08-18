@@ -38,7 +38,16 @@ export const getClientBookings = async (req, res, next) => {
       .populate("listing")
       .populate("provider", "name email role")
       .populate("quotes");
-    res.json(bookings);
+
+    const bookingsWithEscrow = await Promise.all(
+      bookings.map(async (booking) => {
+        const escrow = await Escrow.findOne({ booking: booking._id });
+        const bObj = booking.toObject();
+        bObj.escrow = escrow;
+        return bObj;
+      })
+    );
+    res.json(bookingsWithEscrow);
   } catch (error) {
     next(error);
   }
@@ -50,7 +59,16 @@ export const getProviderBookings = async (req, res, next) => {
       .populate("listing")
       .populate("client", "name email role")
       .populate("quotes");
-    res.json(bookings);
+
+    const bookingsWithEscrow = await Promise.all(
+      bookings.map(async (booking) => {
+        const escrow = await Escrow.findOne({ booking: booking._id });
+        const bObj = booking.toObject();
+        bObj.escrow = escrow;
+        return bObj;
+      })
+    );
+    res.json(bookingsWithEscrow);
   } catch (error) {
     next(error);
   }
@@ -75,7 +93,11 @@ export const getBookingDetail = async (req, res, next) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    res.json(booking);
+    const escrow = await Escrow.findOne({ booking: booking._id });
+    const bObj = booking.toObject();
+    bObj.escrow = escrow;
+
+    res.json(bObj);
   } catch (error) {
     next(error);
   }
@@ -221,13 +243,7 @@ if (booking.status !== "quote_accepted") {
     booking.status = "completed";
     await booking.save();
 
-    // Release the escrow to the provider when the booking is completed
     const escrow = await Escrow.findOne({ booking: booking._id });
-    if (escrow && escrow.status === "funded") {
-      escrow.status = "released";
-      await escrow.save();
-    }
-
     res.json({ message: "Booking completed", booking, escrow });
   } catch (error) {
     next(error);

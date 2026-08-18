@@ -762,9 +762,16 @@ function FreelancerDashboard({ user, activeSection, onLogout }) {
                 <div className="dashboard-card animate-in" key={booking._id}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <h3><i className="fas fa-briefcase" style={{ color: "var(--brand)" }}></i> {booking.listing?.title || "Booking request"}</h3>
-                    <span className={`badge badge-${booking.status === "confirmed" ? "success" : booking.status === "cancelled" ? "danger" : "warning"}`}>
-                      {booking.status}
-                    </span>
+                    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      <span className={`badge badge-${booking.status === "completed" || booking.status === "confirmed" ? "success" : booking.status === "cancelled" ? "danger" : booking.status === "quote_accepted" ? "info" : "warning"}`}>
+                        {booking.status}
+                      </span>
+                      {booking.escrow && (
+                        <span className={`badge badge-${booking.escrow.status === "released" ? "success" : "purple"}`}>
+                          <i className={`fas ${booking.escrow.status === "released" ? "fa-check-double" : "fa-shield-alt"}`}></i> Escrow: {booking.escrow.status}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <p className="listing-meta">
                     <i className="fas fa-user"></i> {booking.client?.name || "Client"}

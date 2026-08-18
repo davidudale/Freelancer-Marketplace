@@ -358,9 +358,16 @@ const handleCompleteBooking = async (bookingId) => {
                 <div className="dashboard-card animate-in" key={booking._id}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <h3><i className="fas fa-briefcase" style={{ color: "var(--brand)" }}></i> {booking.listing?.title || "Service request"}</h3>
-                    <span className={`badge badge-${booking.status === "confirmed" ? "success" : booking.status === "cancelled" ? "danger" : "warning"}`}>
-                      {booking.status}
-                    </span>
+                    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      <span className={`badge badge-${booking.status === "completed" || booking.status === "confirmed" ? "success" : booking.status === "cancelled" ? "danger" : booking.status === "quote_accepted" ? "info" : "warning"}`}>
+                        {booking.status}
+                      </span>
+                      {booking.escrow && (
+                        <span className={`badge badge-${booking.escrow.status === "released" ? "success" : "purple"}`}>
+                          <i className={`fas ${booking.escrow.status === "released" ? "fa-check-double" : "fa-shield-alt"}`}></i> Escrow: {booking.escrow.status}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <p className="listing-meta">
                     <i className="fas fa-user"></i> {booking.provider?.name || "Provider"}
@@ -395,17 +402,23 @@ const handleCompleteBooking = async (bookingId) => {
                   ) : (
                     <p className="listing-meta"><i className="fas fa-info-circle"></i> No quotes yet.</p>
                   )}
-{booking.status === "quote_accepted" && (
+{(booking.status === "quote_accepted" || booking.status === "completed") && (
                     <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem", flexWrap: "wrap" }}>
-                      <button className="btn btn-primary btn-sm" type="button" onClick={() => handleCompleteBooking(booking._id)}>
-                        <i className="fas fa-check-circle"></i> Mark Completed
-                      </button>
-                      <button className="btn btn-accent btn-sm" type="button" onClick={() => handleFundEscrow(booking._id)}>
-                        <i className="fas fa-shield-alt"></i> Fund Escrow
-                      </button>
-                      <button className="btn btn-outline btn-sm" type="button" onClick={() => handleReleaseEscrow(booking._id)}>
-                        <i className="fas fa-hand-holding-usd"></i> Release Payment
-                      </button>
+                      {booking.status === "quote_accepted" && (
+                        <button className="btn btn-primary btn-sm" type="button" onClick={() => handleCompleteBooking(booking._id)}>
+                          <i className="fas fa-check-circle"></i> Mark Completed
+                        </button>
+                      )}
+                      {!booking.escrow && booking.status === "quote_accepted" && (
+                        <button className="btn btn-accent btn-sm" type="button" onClick={() => handleFundEscrow(booking._id)}>
+                          <i className="fas fa-shield-alt"></i> Fund Escrow
+                        </button>
+                      )}
+                      {booking.escrow && booking.escrow.status === "funded" && (
+                        <button className="btn btn-outline btn-sm" type="button" onClick={() => handleReleaseEscrow(booking._id)}>
+                          <i className="fas fa-hand-holding-usd"></i> Release Payment
+                        </button>
+                      )}
                       <button className="btn btn-outline btn-sm" type="button" onClick={() => handleGetEscrow(booking._id)}>
                         <i className="fas fa-eye"></i> Check Escrow
                       </button>
